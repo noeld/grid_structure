@@ -22,3 +22,4 @@ target_link_libraries(ogl2
     ${GLEW_LIBRARIES}
     fmt::fmt
     )
+target_compile_options(ogl2 PRIVATE  "-mavx2")

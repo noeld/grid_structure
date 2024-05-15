@@ -29,8 +29,8 @@ void compute_texture(int const &width, int const &height, std::unique_ptr<float[
         for (int y = 0; y < height; ++y) {
             float *f = &data[3 * (width * y + x)];
             f[0] = 0.5f + 0.5 * sinf(x * fx + extra );
-            f[1] = 0.5f + 0.5 * cosf(y * fy + extra);
-            f[2] = 0.f;
+            f[1] = 0.5f + 0.5 * sinf(y * fy + extra);
+            f[2] = 0.5f + 0.5 * cosf(y * fy + extra - M_PIf32);
         }
     }
 }
@@ -65,8 +65,8 @@ int main(int argc, char const *argv[]) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  int width = 512;
-  int height = 512;
+  int width = 256;
+  int height = 256;
   auto buffersize = width * height * 3;
   auto data = std::make_unique<float[]>(buffersize);
 

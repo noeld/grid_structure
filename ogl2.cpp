@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -8,26 +9,80 @@
 #include <chrono>
 #include <ratio>
 
+class Timer {
+public:
+    using clock_type = std::chrono::high_resolution_clock;
+    using time_point = clock_type::time_point;
+
+    static time_point now() noexcept { return clock_type::now(); }
+
+    explicit Timer() : start_ { now() }, stop_ { start_ }, last_stop_{ start_ }
+    {}
+
+    void start() { start_ = now(); }
+    void stop() {
+        last_stop_  = stop_;
+        stop_ = now();
+    }
+
+    float seconds_interval() const {
+        return std::chrono::duration<float>(stop_ - last_stop_).count();
+    }
+    float seconds_total() const {
+        return std::chrono::duration<float>(stop_ - start_).count();
+    }
+protected:
+    time_point start_, stop_, last_stop_;
+};
 
 constexpr int window_width = 1024;
 constexpr int window_height = 768;
 constexpr char const * window_title = "ogl2";
 
+template<typename ELT>
+class Image {
+public:
+    using value_type = ELT;
+    explicit Image(unsigned width, unsigned height)
+    : width_{width}, height_{height}, len_{width * height}
+    , data_{std::make_unique<value_type[]>(width * height)}
+    {}
+    ELT& operator()(unsigned x, unsigned y) {
+        return data_[y * width_ + x];
+    }
+    std::span<ELT> row(unsigned y) {
+        return std::span(data_.get() + y * width_, width_);
+    }
+    ELT* row_ptr(unsigned y) {
+        return &data_[y * width_];
+    }
+    auto begin() { return data_.get(); }
+    auto end() { return data_.get() + len_ ; }
+    auto size() const noexcept { return len_; }
+    auto width() const noexcept { return width_; }
+    auto height() const noexcept { return height_; }
+protected:
+    unsigned const width_, height_, len_;
+    std::unique_ptr<ELT[]> data_;
+};
+
 void resize(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void compute_texture(int const &width, int const &height, std::unique_ptr<float[]> &data) {
+template<typename T>
+void compute_image(Image<T> & img) {
     auto time = std::chrono::steady_clock::now();
     std::chrono::duration<float> m = time.time_since_epoch();
     float int_part;
     float fract_part = modff(m.count(), &int_part);
     float extra = fract_part * 2 * M_PIf32;
-    float fx = 2 * M_PIf32 / ((float) width - 1);
-    float fy = 2 * M_PIf32 / ((float) height - 1);
-    for (int x = 0; x < width; ++x) {
-        for (int y = 0; y < height; ++y) {
-            float *f = &data[3 * (width * y + x)];
+    float fx = 2 * M_PIf32 / ((float) img.width() - 1);
+    float fy = 2 * M_PIf32 / ((float) img.height() - 1);
+    for (int x = 0; x < img.width(); ++x) {
+        for (int y = 0; y < img.height(); ++y) {
+            auto& f = img(x, y);
+            //float *f = &data[3 * (img.width() * y + x)];
             f[0] = 0.5f + 0.5 * sinf(x * fx + extra );
             f[1] = 0.5f + 0.5 * sinf(y * fy + extra);
             f[2] = 0.5f + 0.5 * cosf(y * fy + extra - M_PIf32);
@@ -67,13 +122,11 @@ int main(int argc, char const *argv[]) {
 
   int width = 256;
   int height = 256;
-  auto buffersize = width * height * 3;
-  auto data = std::make_unique<float[]>(buffersize);
+  Image<std::array<float, 3>> img(width, height);
 
-  compute_texture(width, height, data);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, data.get());
+  compute_image(img);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, img.begin());
   glGenerateMipmap(GL_TEXTURE_2D);
-  fmt::println(stderr, "glGenerateMipmap");
 
   // Erstelle Vertex Array Object (VAO) und Vertex Buffer Object (VBO)
   unsigned int VAO, VBO;
@@ -132,16 +185,20 @@ int main(int argc, char const *argv[]) {
   glDeleteShader(fragmentShader);
 
   fmt::println(stderr, "glDeleteShader");
-
+  Timer timer;
   while (!glfwWindowShouldClose(window)) {
+    timer.stop();
+    float delta_time_s = timer.seconds_interval();
     glfwPollEvents();
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(shaderProgram);
 
     glBindTexture(GL_TEXTURE_2D, texture);
-    compute_texture(width, height, data);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, data.get());
+    //compute_texture(width, height, data);
+    compute_image(img);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, data.get());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, img.begin());
     glBindVertexArray(VAO);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);

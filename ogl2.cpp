@@ -8,6 +8,9 @@
 #include <memory>
 #include <chrono>
 #include <ratio>
+#include <thread>
+#include <tuple>
+
 
 class Timer {
 public:
@@ -204,6 +207,9 @@ int main(int argc, char const *argv[]) {
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices);
 
     glfwSwapBuffers(window);
+    float rest_time = 1.f/60.f - delta_time_s;
+    if (rest_time > 0.f)
+        std::this_thread::sleep_for(std::chrono::duration<float>(rest_time));
   }
   glfwTerminate();
 

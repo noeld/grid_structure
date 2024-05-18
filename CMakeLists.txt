@@ -15,7 +15,7 @@ message(STATUS "OPENGL_LIBRARIES ${OPENGL_LIBRARIES}")
 include_directories(${OPENGL_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS})
 
-add_executable(ogl2 ogl2.cpp)
+add_executable(ogl2 ogl2.cpp grid_structure.hpp)
 target_link_libraries(ogl2
     ${OPENGL_LIBRARIES}
     glfw
@@ -23,3 +23,6 @@ target_link_libraries(ogl2
     fmt::fmt
     )
 target_compile_options(ogl2 PRIVATE  "-mavx2")
+
+add_executable(testgs testgs.cpp grid_structure.hpp)
+target_link_libraries(testgs fmt::fmt)

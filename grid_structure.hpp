@@ -38,6 +38,7 @@ struct grid_structure {
 
     constexpr unsigned width() const noexcept { return areas_width_ * gw; }
     constexpr unsigned height() const noexcept { return areas_height_ * gh; }
+    constexpr size_t size() const noexcept { return width() * height(); }
 
     constexpr auto coord_to_offset(unsigned x, unsigned y) const noexcept -> size_t {
         return ((y & mask_floor) << shift_left) * areas_width_

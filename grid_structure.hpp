@@ -1,28 +1,5 @@
 #pragma once
 
-
-// idea: 2D-Gridstructure which is organized in small areas
-// to keep close points also close in memory
-// /-gw-\
-// ........########........########........ \
-// ........########........########........  gh
-// ........########........########........ /
-// ########........########........########
-// ########...P....########........########
-// ########........########........########
-// ........########........########........
-// ........########........########........
-// ........########........########........
-//
-// P's position in ,memory:
-// floor(py / gh) * width_areas * gw * gh + floor(px / gw) * gw * gh + mod(py, gh) * gw + mod(px, gw)
-//
-// Use 2^x for gw and gh makes division a simple bit shift and mod a simple bit mask
-// e.g. gw = gh = 8 and P(12, 9): 0x0C, 0x09
-// area starts at (0x09 >> 3) * 64 * width_areas + (0x0C >> 3) * 64  + (0x09 & 0x07) * 8 + (0x0C & 0x07)
-//                (0x09 & 0xfa << 3)      * width_areas + (0x0C & 0xfa << 3)      + (0x09 & 0x07 << 3) + (0x0C & 0x07)
-//
-
 #include <cstddef>
 #include <tuple>
 
@@ -47,7 +24,7 @@
  * e.g. gw = gh = 8 and P(12, 9): 0x0C, 0x09
  * area starts at (0x09 >> 3) * 64 * width_areas + (0x0C >> 3) * 64  + (0x09 & 0x07) * 8 + (0x0C & 0x07)
                  * (0x09 & 0xfa << 3)      * width_areas + (0x0C & 0xfa << 3)      + (0x09 & 0x07 << 3) + (0x0C & 0x07)
- * @tparam     SHIFT_LEFT  { description }
+ * @tparam     SHIFT_LEFT  the power of 2 (bits) to use for area width and height
  */
 template<size_t SHIFT_LEFT = 3>
 struct grid_structure {

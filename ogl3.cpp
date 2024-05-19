@@ -79,10 +79,17 @@ template<typename T>
 void compute_image(Image<T>* src, Image<T>* tgt) {
     auto& s = *src;
     auto& t = *tgt;
-    for(unsigned y = 1; y < src->height() - 1; ++y) {
-        for(unsigned x = 1; x < src->width() - 1; ++x) {
-            auto avg = (s(x - 1, y) + s(x + 1, y) + s(x, y -1) + s(x, y +1)) / 4.f;
-            t(x, y) -= (avg - s(x, y)) * 0.05f;
+    unsigned border = 4;
+    for(unsigned y = border; y < src->height() - border; ++y) {
+        for(unsigned x = border; x < src->width() - border; ++x) {
+            float avg = 0.f;
+            for(unsigned by = y - border; by < y + border + 1; ++by) {
+                for(unsigned bx = x - border; bx < x + border + 1; ++bx) {
+                    avg += s(bx, by);
+                }
+            }
+            avg /= (2*border+1) * (2*border+1);
+            t(x, y) = s(x, y) + (avg - s(x, y)) * 0.05f;
         }
     }
 

@@ -6,6 +6,7 @@
 #include "grid_structure.hpp"
 #include <ranges>
 #include <tuple>
+#include <vector>
 
 /**
  * @brief      Unfortunately, this test shows worse performance for grid
@@ -18,11 +19,13 @@
  * grid : linear = 4.9:1
  */
 void test_grid_access() {
-    using gs_type = grid_structure<4>;
-    constexpr unsigned resx = 2048;
-    constexpr unsigned resy = 2048;
+    using gs_type = grid_structure<3>;
+    constexpr unsigned resx = 4096;
+    constexpr unsigned resy = 4096;
     gs_type gs(resx / gs_type::gw, resy / gs_type::gh);
     fmt::println("Test with {} x {} grid ({} x {} areas).", gs.width(), gs.height(), gs.areas_width_, gs.areas_height_);
+    fmt::println("Data amount of image: {:.3f}MB", sizeof(float) * gs.size() / (float)(1<<20) );
+    fmt::println("Data amount of area : {:.3f}KB", sizeof(float) * gs_type::area_size / (float)(1<<10) );
     std::vector<float> fgrid1(gs.size());
     std::vector<float> fgrid2(gs.size());
     std::vector<float> flinear1(gs.size());
@@ -51,45 +54,40 @@ void test_grid_access() {
     auto la = [&](std::vector<float>& v, unsigned const & x, unsigned const & y) -> float& {
         return v[lin_coord_to_offset(x, y)];
     };
-    constexpr size_t TEST_CNT = 100;
-    float duration_grid_s = 0.f;
-    float duration_linear_s = 0.f;
+    constexpr size_t TEST_CNT = 50;
+    auto perform_test = [](size_t test_cnt, unsigned width, unsigned height,
+        std::vector<float>& grid_a, std::vector<float>& grid_b,
+        auto&& acc, std::string_view desc) -> float
     {
-        std::vector<float>* src = &fgrid1;
-        std::vector<float>* tgt = &fgrid2;
+        std::vector<float>* src = &grid_a;
+        std::vector<float>* tgt = &grid_b;
+        unsigned border = 5;
         auto start = std::chrono::high_resolution_clock::now();
-        for(size_t i = 0; i < TEST_CNT; ++i) {
-            for(unsigned y = 1; y < gs.height() - 1; ++y) {
-                for(unsigned x = 1; x < gs.width() - 1; ++x) {
-                    auto avg = (ga(*src, x - 1, y) + ga(*src, x + 1, y) + ga(*src, x, y -1) + ga(*src, x, y +1))/4.f;
-                    ga(*tgt, x, y) += (avg - ga(*src, x, y)) * 0.2f ;
+        for(size_t i = 0; i < test_cnt; ++i) {
+            for(unsigned y = border; y < height - border; ++y) {
+                for(unsigned x = border; x < width - border; ++x) {
+                    float avg = 0.f;
+                    for(unsigned yb = y - border; yb < y + border + 1; ++yb) {
+                        for(unsigned xb = x - border; xb < x + border + 1; ++xb) {
+                            avg += acc(*src, xb, yb);
+                        }
+                    }
+                    avg /= (2*border+1) * (2*border+1);
+                    //auto avg = (acc(*src, x - 1, y) + acc(*src, x + 1, y) + acc(*src, x, y -1) + acc(*src, x, y +1))/4.f;
+                    acc(*tgt, x, y) += (avg - acc(*src, x, y)) * 0.2f ;
                 }
             }
             std::swap(src, tgt);
         }
         auto stop = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> s = stop - start;
-        duration_grid_s = s.count();
-        fmt::println("Test with grid_structure took   {:.6f}s", duration_grid_s);
-    }
-    {
-        std::vector<float>* src = &flinear1;
-        std::vector<float>* tgt = &flinear2;
-        auto start = std::chrono::high_resolution_clock::now();
-        for(size_t i = 0; i < TEST_CNT; ++i) {
-            for(unsigned y = 1; y < gs.height() - 1; ++y) {
-                for(unsigned x = 1; x < gs.width() - 1; ++x) {
-                    auto avg = (la(*src, x - 1, y) + la(*src, x + 1, y) + la(*src, x, y -1) + la(*src, x, y +1))/4.f;
-                    la(*tgt, x, y) += (avg - la(*src, x, y)) * 0.2f ;
-                }
-            }
-            std::swap(src, tgt);
-        }
-        auto stop = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<float> s = stop - start;
-        duration_linear_s = s.count();
-        fmt::println("Test with linear structure took {:.6f}s", duration_linear_s);
-    }
+        float duration = s.count();
+        fmt::println("Test {:<20}: {:.6f}s", desc, duration);
+        return duration;
+    };
+
+    float duration_grid_s = perform_test(TEST_CNT, gs.width(), gs.height(), fgrid1, fgrid2, ga, "with grid access");
+    float duration_linear_s = perform_test(TEST_CNT, gs.width(), gs.height(), fgrid1, fgrid2, la, "with linear access");;
     fmt::println("grid : linear = {:.2}:1", duration_grid_s / duration_linear_s);
 }
 

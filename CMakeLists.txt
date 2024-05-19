@@ -26,3 +26,11 @@ target_compile_options(ogl2 PRIVATE  "-mavx2")
 
 add_executable(testgs testgs.cpp grid_structure.hpp)
 target_link_libraries(testgs fmt::fmt)
+
+add_executable(ogl3 ogl3.cpp)
+target_link_libraries(ogl3
+    ${OPENGL_LIBRARIES}
+    glfw
+    ${GLEW_LIBRARIES}
+    fmt::fmt
+    )

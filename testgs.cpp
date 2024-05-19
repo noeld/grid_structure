@@ -11,13 +11,13 @@
 
 int test_grid_access_performance() {
     using gs_type = grid_structure<4>;
-    constexpr unsigned resx = 4096 * 1;
-    constexpr unsigned resy = 4096 * 1;
-    constexpr unsigned border = 3;
+    constexpr unsigned resx = 4096 * 4;
+    constexpr unsigned resy = 4096 * 4;
+    constexpr unsigned border = 4;
     constexpr size_t TEST_CNT = 10;
 
     gs_type gs(resx / gs_type::gw, resy / gs_type::gh);
-    fmt::println("Test with {} x {} grid ({} x {} areas of {}x{} = {} bytes per area).",
+    fmt::println("Test with {} x {} grid ({} x {} areas of {}x{} = {} elements per area).",
         gs.width(), gs.height(), gs.areas_width_, gs.areas_height_, gs_type::gw, gs_type::gh, gs_type::area_size);
     fmt::println("Data amount of image: {:.3f}MB", sizeof(float) * gs.size() / (float)(1<<20) );
     fmt::println("Data amount of area : {:.3f}KB", sizeof(float) * gs_type::area_size / (float)(1<<10) );
@@ -50,12 +50,11 @@ int test_grid_access_performance() {
         return v[lin_coord_to_offset(x, y)];
     };
     auto perform_test = [](size_t test_cnt, unsigned width, unsigned height,
-        std::vector<float>& grid_a, std::vector<float>& grid_b,
+        std::vector<float>& grid_a, std::vector<float>& grid_b, unsigned border,
         auto&& acc, std::string_view desc) -> float
     {
         std::vector<float>* src = &grid_a;
         std::vector<float>* tgt = &grid_b;
-        unsigned border = 4;
         auto start = std::chrono::high_resolution_clock::now();
         for(size_t i = 0; i < test_cnt; ++i) {
             for(unsigned y = border; y < height - border; ++y) {
@@ -79,8 +78,8 @@ int test_grid_access_performance() {
         return duration;
     };
 
-    float duration_grid_s = perform_test(TEST_CNT, gs.width(), gs.height(), fgrid1, fgrid2, ga, "with grid access");
-    float duration_linear_s = perform_test(TEST_CNT, gs.width(), gs.height(), fgrid1, fgrid2, la, "with linear access");;
+    float duration_grid_s = perform_test(TEST_CNT, gs.width(), gs.height(), fgrid1, fgrid2, border, ga, "with grid access");
+    float duration_linear_s = perform_test(TEST_CNT, gs.width(), gs.height(), fgrid1, fgrid2, border, la, "with linear access");;
     fmt::println("grid : linear = {:.2}:1", duration_grid_s / duration_linear_s);
     return 0;
 }

@@ -79,7 +79,7 @@ int test_grid_access_performance() {
     };
 
     float duration_grid_s = perform_test(TEST_CNT, gs.width(), gs.height(), fgrid1, fgrid2, border, ga, "with grid access");
-    float duration_linear_s = perform_test(TEST_CNT, gs.width(), gs.height(), fgrid1, fgrid2, border, la, "with linear access");;
+    float duration_linear_s = perform_test(TEST_CNT, gs.width(), gs.height(), flinear1, flinear2, border, la, "with linear access");;
     fmt::println("grid : linear = {:.2}:1", duration_grid_s / duration_linear_s);
     return 0;
 }

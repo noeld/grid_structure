@@ -44,8 +44,6 @@ cache-locality shows only under the following conditions
  - area size of 16x16 or 32x32 seem to yield best results (i.e. `grid_structure<4>`
     or `grid_structure<5>`.) on a AMD Ryzen 5 3600 6-Core Processor (single
     threaded execution).
- - adding AVX2 SIMD instructions `-mavx2` boosts runtime by a 3rd! (For grid
- memory access as well es linear access.)
 
  Best run in `testgs` with 83% runtime for 4096x4096 image with 16x16 areas:
 

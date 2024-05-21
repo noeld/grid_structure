@@ -10,17 +10,17 @@
 
 
 int test_grid_access_performance() {
-    using gs_type = grid_structure<4>;
-    constexpr unsigned resx = 4096 * 4;
-    constexpr unsigned resy = 4096 * 4;
+    using gs_type = grid_structure<3>;
+    constexpr unsigned resx = 4096 * 2;
+    constexpr unsigned resy = 4096 * 2;
     constexpr unsigned border = 4;
-    constexpr size_t TEST_CNT = 10;
+    constexpr size_t TEST_CNT = 5;
 
     gs_type gs(resx / gs_type::gw, resy / gs_type::gh);
     fmt::println("Test with {} x {} grid ({} x {} areas of {}x{} = {} elements per area).",
         gs.width(), gs.height(), gs.areas_width_, gs.areas_height_, gs_type::gw, gs_type::gh, gs_type::area_size);
-    fmt::println("Data amount of image: {:.3f}MB", sizeof(float) * gs.size() / (float)(1<<20) );
-    fmt::println("Data amount of area : {:.3f}KB", sizeof(float) * gs_type::area_size / (float)(1<<10) );
+    fmt::println("Data amount of image: {:.1f}MB", sizeof(float) * gs.size() / (float)(1<<20) );
+    fmt::println("Data amount of area : {:.1f}KB", sizeof(float) * gs_type::area_size / (float)(1<<10) );
     fmt::println("Using {0}x{0} matrix with {1} + 2 memory accesses per pixel operation. Run test {2} times.",
         2*border+1, (2*border+1)*(2*border+1), TEST_CNT);
     std::vector<float> fgrid1(gs.size());
@@ -42,8 +42,9 @@ int test_grid_access_performance() {
         std::copy(fgrid1.begin(), fgrid1.end(), e->begin());
 
     // grid access
-    auto ga = [&](std::vector<float>& v, unsigned const & x, unsigned const & y) -> float& {
-        return v[gs.coord_to_offset(x, y)];
+    auto ga = [&](std::vector<float> & v, unsigned const & x, unsigned const & y) -> float& {
+        //return v[gs.coord_to_offset(x, y)];
+        return gs.acc(v, x, y);
     };
     // linear access
     auto la = [&](std::vector<float>& v, unsigned const & x, unsigned const & y) -> float& {
@@ -141,6 +142,11 @@ int main(int argc, char const *argv[])
     int ret = test_conversion_functions();
 
     test_grid_access_performance();
+
+    auto o = grid_structure<3>(5).coord_to_offset(9,12);
+    unsigned const x = 9, y = 12, areas_width_ = 5;
+    constexpr auto o2 = (y * 8 * areas_width_) + ((y % 8) * 8) + x * 8 + (x % 8);
+
 
     return ret;
 }

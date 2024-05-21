@@ -32,7 +32,6 @@ struct grid_structure {
     static constexpr unsigned gw = 1 << shift_left, gh = 1 << shift_left;
     static constexpr unsigned area_size = gw * gh;
     static constexpr unsigned mask_mod = gw - 1;
-    static constexpr unsigned mask_floor = ~mask_mod;
 
     unsigned const areas_width_, areas_height_;
 
@@ -41,8 +40,8 @@ struct grid_structure {
     constexpr size_t size() const noexcept { return width() * height(); }
 
     constexpr auto coord_to_offset(unsigned x, unsigned y) const noexcept -> size_t {
-        return ((y & mask_floor) << shift_left) * areas_width_
-             + ((x & mask_floor) << shift_left)
+        return ((y & ~mask_mod) << shift_left) * areas_width_
+             + ((x & ~mask_mod) << shift_left)
              + ((y & mask_mod) << shift_left)
              + (x & mask_mod);
     }
@@ -74,4 +73,19 @@ struct grid_structure {
         return std::make_tuple<unsigned, unsigned>(x, y);
     }
 
+    constexpr auto& acc(auto& vector, unsigned x, unsigned y) const noexcept
+    requires requires {
+        vector[0]; // index operator
+    }
+    {
+        return std::forward<decltype(vector)>(vector)[coord_to_offset(x, y)];
+    }
+
+    constexpr auto const& acc(auto const & vector, unsigned x, unsigned y) const noexcept
+    requires requires {
+        vector[0]; // index operator
+    }
+    {
+        return std::forward<decltype(vector)>(vector)[coord_to_offset(x, y)];
+    }
 };

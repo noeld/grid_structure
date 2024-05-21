@@ -52,7 +52,10 @@ public:
     : width_{width}, height_{height}, len_{width * height}
     , data_{std::make_unique<value_type[]>(width * height)}
     {}
-    ELT& operator()(unsigned x, unsigned y) {
+    ELT& operator()(unsigned x, unsigned y) noexcept {
+        return data_[y * width_ + x];
+    }
+    ELT const& operator()(unsigned x, unsigned y) const noexcept {
         return data_[y * width_ + x];
     }
     std::span<ELT> row(unsigned y) {
@@ -76,8 +79,8 @@ void resize(GLFWwindow* window, int width, int height) {
 }
 
 template<typename T>
-void compute_image(Image<T>* src, Image<T>* tgt) {
-    auto& s = *src;
+void compute_image(Image<T> const * src, Image<T>* tgt) {
+    auto const & s = *src;
     auto& t = *tgt;
     unsigned border = 4;
     for(unsigned y = border; y < src->height() - border; ++y) {

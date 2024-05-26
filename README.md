@@ -1,26 +1,33 @@
-# ogl2
+# Grid-Structure
 
-A bunch of tests around OpenGL and `grid_structure` - a grid-wise memory layout
-for image data which intends to **localize data for processing of neighboring pixels with better performance.**
+Test for usefulness (speed) of an alternative memory layout for bitmaps and
+operations on neighboring pixels (image elements). `grid_structure` is a
+grid-wise memory layout for image data which intends to **localize data for
+processing of neighboring pixels with better performance.**
 
-Test show 57% runtime compared to standard memory access patterns
-for *large* images. (For small images the access overhead outweights
-the cache hit improvement.)
+Tests (see below) show just 57% runtime compared to standard memory access patterns
+for *large* images. (For small images the access overhead outweighs the cache
+hit improvement.)
 
 ## Build
 
+The build uses `cmake` and `fmt` is installed via `vcpkg`.
+
+The visualization also depends on `OpenGL`, `glfw3`, and `GLEW`. These are
+readily available on my system so I did not put them into `vcpkg.json`.
+
     cmake -S . -B build -G Ninja \
-    -DCMAKE_TOOLCHAIN_FILE=~/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake \
+    -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
     -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
-## `grid_structure` and `testgs`
+## `grid_structure.hpp` and `testgs`
 
-`grid_structure` is a grid where an image is subdivided into areas of (identical)
+`grid_structure.hpp` is a grid where an image is subdivided into areas of (identical)
 width `gw` and height `gh` which is a power of 2 (i.e. 2, 4, 8, 16, ...).
 
     /- gw -\
-    ........########........########........ \
-    ........########........########........  gh
+    12345678########........########........ \
+    90123456########........########........  gh
     ........########........########........ /
     ########........########........########
     ########...P....########........########
@@ -32,6 +39,21 @@ width `gw` and height `gh` which is a power of 2 (i.e. 2, 4, 8, 16, ...).
 Within each area the memory is laid out as usual with first the elements of the
 top row from left to right, then the elements of the second row from left to
 right and so on.
+
+Usually, when you use memory for the data of an image, the data of a certain
+image element at the coordinates (x, y) are located at `base_offset +
+(y * width) + x`. Thus, a neighbor-pixel at (x, y - i) is `i* width` pixels
+away which might already be out of cache.
+
+With the image divided into small areas of e.g. 8 x 8 = 64 pixels (x, y - 1) is
+might be just 8 bytes away. When located in other areas the distance might be
+greater and also out of the cache - in which case it might not be worse than
+usual.
+
+On the **downside**:
+1. calculating the offset from the coordinates is much more complex.
+2. Usually, for OpenGL you will need to rearrange the memory layout in order to
+copy it into a texture buffer.
 
 ### Speed check
 

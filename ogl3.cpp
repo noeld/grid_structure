@@ -40,9 +40,9 @@ protected:
     time_point start_, stop_, last_stop_;
 };
 
-constexpr int window_width = 1024;
-constexpr int window_height = 768;
-constexpr char const * window_title = "ogl2";
+static constexpr int window_width = 1024;
+static constexpr int window_height = 768;
+static constexpr char const * window_title = "ogl2";
 
 template<typename ELT>
 class Image {

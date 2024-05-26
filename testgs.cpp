@@ -11,10 +11,10 @@
 
 int test_grid_access_performance() {
     using gs_type = grid_structure<3>;
-    constexpr unsigned resx = 4096 * 2;
-    constexpr unsigned resy = 4096 * 2;
-    constexpr unsigned border = 4;
-    constexpr size_t TEST_CNT = 5;
+    static constexpr unsigned resx = 4096 * 2;
+    static constexpr unsigned resy = 4096 * 2;
+    static constexpr unsigned border = 4;
+    static constexpr size_t TEST_CNT = 5;
 
     gs_type gs(resx / gs_type::gw, resy / gs_type::gh);
     fmt::println("Test with {} x {} grid ({} x {} areas of {}x{} = {} elements per area).",
@@ -57,6 +57,7 @@ int test_grid_access_performance() {
         std::vector<float>* src = &grid_a;
         std::vector<float>* tgt = &grid_b;
         auto start = std::chrono::high_resolution_clock::now();
+        // blur effect - blends brightness towards the average of neighbors
         for(size_t i = 0; i < test_cnt; ++i) {
             for(unsigned y = border; y < height - border; ++y) {
                 for(unsigned x = border; x < width - border; ++x) {
@@ -90,7 +91,7 @@ int test_conversion_functions() {
     unsigned coords[][2] = {{0, 0}, {1, 0}, {0, 1}, {7, 7,}, {8, 0}, {0, 8}, {1, 8}, {8, 8},
     {9, 0}, {0, 9}, {9, 9}};
 
-    constexpr grid_structure<> gs(7, 3);
+    static constexpr grid_structure<> gs(7, 3);
 
     auto test = [&](unsigned x0, unsigned y0, bool print_success = false) -> bool {
         auto off = gs.coord_to_offset(x0, y0);
@@ -119,7 +120,7 @@ int test_conversion_functions() {
 
     auto rnd_x = mk_randomizer(gs.width());
     auto rnd_y = mk_randomizer(gs.height());
-    constexpr size_t NUM_RANDOM_TESTS = 100000;
+    static constexpr size_t NUM_RANDOM_TESTS = 100000;
     for(auto i : std::views::iota(1) | std::views::take(NUM_RANDOM_TESTS)) {
         ++tested;
         passed += test(rnd_x(), rnd_y()) ? 1 : 0;
@@ -145,7 +146,7 @@ int main(int argc, char const *argv[])
 
     auto o = grid_structure<3>(5).coord_to_offset(9,12);
     unsigned const x = 9, y = 12, areas_width_ = 5;
-    constexpr auto o2 = (y * 8 * areas_width_) + ((y % 8) * 8) + x * 8 + (x % 8);
+    static constexpr auto o2 = (y * 8 * areas_width_) + ((y % 8) * 8) + x * 8 + (x % 8);
 
 
     return ret;
